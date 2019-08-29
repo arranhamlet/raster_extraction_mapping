@@ -3,9 +3,14 @@ library(rgeos)
 library(raster)
 library(maptools)
 
-#Load shapefile and raster for region around COG and just for COG
+#Load shapefile and raster for COG
 COG_shp <- readOGR("data/shp/COG_adm1.shp", stringsAsFactors = FALSE)
 COG_raster <- raster("data/raster/COG_raster.tif")
+
+#Plot to see everything
+windows()
+plot(COG_shp)
+plot(COG_raster, add = TRUE, legend = FALSE)
 
 #Cropland values
 crop_values <- c(10, 11, 12, 20, 30)
@@ -20,7 +25,7 @@ plot(COG_shp)
 plot(COG_crop_raster, add = TRUE, col = "blue", legend = FALSE)
 
 #Give crop_values the same values that are not taken by anything else and remove the rest
-#Aggregate values
+#Aggregate values - this is done so the map looks better at lower resolutions (aka global or continental)
 crop_finding_function <- function(x, crop_threshold = 0.1, ...){
   if(any(x %in% crop_values)){
     if(length(which(x %in% crop_values))/length(x) >= crop_threshold) 9999 else NA
@@ -30,9 +35,15 @@ crop_finding_function <- function(x, crop_threshold = 0.1, ...){
 #Change factor for size
 COG_crop_raster_agg <- raster::aggregate(COG_raster, fact = 10, fun = crop_finding_function)
 
-#Plot to check
-plot(COG_shp, ylim = c(-90, 90), xlim = c(-180, 180))
-plot(COG_crop_raster_agg, add = TRUE, col = "blue", legend = FALSE)
+#Plot to check how it looks at the continet level
+par(mfrow = c(1, 2))
+plot(COG_shp, ylim = c(-36, 36), xlim = c(-19, 52), border = NA)
+plot(COG_crop_raster_agg, col = "blue", legend = FALSE, add = TRUE)
+mtext(side = 3, line = -5, text = "Aggregated")
+plot(COG_shp, ylim = c(-36, 36), xlim = c(-19, 52), border = NA)
+plot(COG_crop_raster, col = "blue", legend = FALSE, add = TRUE)
+mtext(side = 3, line = -5, text = "Non-aggregated")
+
 
 #Now find which admin units different crop colours are in
 #Generate fake disease burde df
